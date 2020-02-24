@@ -32,6 +32,7 @@ except ImportError:
 
 def main():
     argument_spec = dict(command=dict(type='str', required=True),
+                parse_command=dict(type='str', required=False),
                 prompt=dict(type='list', required=False),
                 answer=dict(type='list', required=False),
                 compare=dict(type='dict', required=False),
@@ -72,6 +73,10 @@ def main():
 
     compare = module.params.pop('compare')
 
+    parse_command = module.params.pop('parse_command')
+    if not parse_command:
+        parse_command = module.params['command']
+
     response = ''
     try:
         response = connection.get(**module.params)
@@ -84,14 +89,14 @@ def main():
     device.cli = AttrDict({"execute": None})
 
     try:
-        get_parser(module.params['command'], device)
+        get_parser(parse_command, device)
     except Exception as e:
-        module.fail_json(msg="Unable to find parser for command '{0}' ({1})".format(module.params['command'], e))
+        module.fail_json(msg="Unable to find parser for command '{0}' ({1})".format(parse_command, e))
 
     try:
-        parsed_output = device.parse(module.params['command'], output=response)
+        parsed_output = device.parse(parse_command, output=response)
     except Exception as e:
-        module.fail_json(msg="Unable to parse output for command '{0}' ({1})".format(module.params['command'], e))
+        module.fail_json(msg="Unable to parse output for command '{0}' ({1})".format(parse_command, e))
 
     # import sys;
     # sys.stdin = open('/dev/tty')
@@ -100,7 +105,7 @@ def main():
 
 
     if compare:
-        diff = Diff(parsed_output, compare, exclude=get_parser_exclude(module.params['command'], device))
+        diff = Diff(parsed_output, compare, exclude=get_parser_exclude(parse_command, device))
         diff.findDiff()
     else:
         diff = None
@@ -116,7 +121,7 @@ def main():
             'stdout': response,
             'structured': parsed_output,
             'diff': "{0}".format(diff),
-            'exclude': get_parser_exclude(module.params['command'], device),
+            'exclude': get_parser_exclude(parse_command, device),
         })
 
     module.exit_json(**result)
