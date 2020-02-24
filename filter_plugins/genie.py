@@ -21,7 +21,7 @@ except ImportError:
 
 class FilterModule(object):
 
-    def genie_parser(self, cli_output, command, os):
+    def genie_parser(self, cli_output, command, os, serie=None):
         if not PY3:
             raise AnsibleFilterError("Genie requires Python 3")
 
@@ -33,7 +33,11 @@ class FilterModule(object):
 
         device = Device("new_device", os=os)
 
-        device.custom.setdefault("abstraction", {})["order"] = ["os"]
+        if serie is not None:
+            device.custom.setdefault("abstraction", {})["order"] = ["os", "serie"]
+            device.custom.setdefault("abstraction", {})["serie"] = serie
+        else:
+            device.custom.setdefault("abstraction", {})["order"] = ["os"]
         device.cli = AttrDict({"execute": None})
 
         try:
